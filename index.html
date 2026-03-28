@@ -1,0 +1,438 @@
+<html>
+  <head>
+    <style>
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #fff5 transparent;
+        font-family: "Geist Mono", monospace;
+      }
+      html,
+      body {
+        color: white;
+        background-color: black;
+        padding: 0px;
+        margin: 0px;
+      }
+      #container {
+        margin: 0px;
+        height: 100%;
+        width: 100%;
+        overflow-y: auto;
+        display: flex;
+      }
+      #left {
+        margin: 0px;
+        width: 20%;
+        display: flex;
+        flex-direction: column;
+      }
+      #channels {
+        margin: 0px;
+        padding: 0px;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+      }
+      #channel-search {
+        margin: 0px;
+        width: 100%;
+        height: 5%;
+        background-color: red;
+        display: flex;
+      }
+      #channel-search-input {
+        margin: 0 auto;
+        padding: 3px;
+        width: 80%;
+        height: 100%;
+        outline: none;
+        display: block;
+        background-color: black;
+        color: white;
+        border: none;
+      }
+      #upload-btn {
+        width: 20%;
+        background: black;
+        color: white;
+        border: white 2px solid;
+        cursor: pointer;
+        font-size: 10px;
+        text-align: center;
+      }
+      #log-search {
+        margin: 0px;
+        padding: 0;
+        width: 100%;
+        height: 5%;
+        background-color: red;
+        display: block;
+      }
+      #log-search-input {
+        padding: 0px;
+        width: 100%;
+        height: 100%;
+        outline: none;
+        display: block;
+        background-color: black;
+        color: white;
+      }
+      #logss {
+        overflow-y: auto;
+        display: flex;
+        height: 95%;
+        flex-direction: column;
+      }
+      #right {
+        margin: 0px;
+        width: 80%;
+        display: flex;
+        flex-direction: column;
+      }
+      .channel {
+        background-color: black;
+        color: white;
+      }
+      .log {
+        padding: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .date {
+        padding: 0;
+        margin: 0;
+        color: rgb(0, 255, 221);
+        font-weight: 900;
+        word-wrap: normal;
+        border-top: rgb(0, 255, 221) 1px solid;
+      }
+      .data {
+        padding: 0;
+        margin: 0;
+        word-wrap: break-word;
+      }
+      .num {
+        color: gray;
+      }
+      button {
+        text-align: left;
+        font-family: "Geist Mono";
+      }
+      button:hover {
+        background-color: #0ff9;
+      }
+      .time {
+        padding: 0;
+        margin: 0;
+        font-size: small;
+        font-weight: lighter;
+        color: rgba(255, 255, 255, 0.6);
+        word-wrap: normal;
+      }
+      .cov {
+        background-color: rgba(255, 255, 255, 0.05);
+        padding-left: 5px;
+        padding-right: 5px;
+        border: rgba(255, 255, 255, 0.011) 1px solid;
+        border-radius: 50px;
+      }
+      /* Source Filename Style */
+      .origin {
+        color: #ffa500;
+        font-size: 9px;
+        margin-left: 5px;
+        opacity: 0.8;
+      }
+      .a {
+        color: rgba(255, 192, 192, 0.8);
+        font-weight: 700;
+      }
+      .b {
+        color: rgb(127, 255, 240);
+        font-weight: 700;
+      }
+      .c {
+        color: rgba(0, 255, 64, 0.8);
+        font-weight: 400;
+      }
+      .d {
+        color: rgb(255, 0, 200);
+        font-weight: 800;
+      }
+      .e {
+        color: rgb(221, 255, 0);
+        font-weight: 400;
+      }
+      .f {
+        color: rgb(0, 255, 98);
+        font-weight: 800;
+      }
+      .is-duplicate {
+        border-left: 2px solid #ff0000;
+        background-color: rgba(255, 0, 0, 0.05);
+      }
+      .dup-tag {
+        color: #ff4444;
+        font-size: 8px;
+        font-weight: bold;
+        margin-left: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div id="left">
+        <div id="channel-search">
+          <input type="text" placeholder="Search" id="channel-search-input" />
+          <button
+            id="upload-btn"
+            onclick="document.getElementById('file-input').click()"
+          >
+            UP
+          </button>
+          <input
+            type="file"
+            id="file-input"
+            multiple
+            accept=".json"
+            style="display: none"
+          />
+        </div>
+        <div id="channels"></div>
+      </div>
+      <div id="right">
+        <div id="log-search">
+          <input type="text" placeholder="Search" id="log-search-input" />
+        </div>
+        <div id="logss"></div>
+      </div>
+    </div>
+    <script>
+      let data = {},
+        lc;
+
+      let duplicateIds = new Set();
+
+      function processData(newData, filename = "local") {
+        let incomingLogs = newData.logs || {};
+
+        for (let chan in incomingLogs) {
+          if (!data[chan]) data[chan] = {};
+
+          for (let id in incomingLogs[chan]) {
+            let entry = incomingLogs[chan][id];
+
+            // Flagging Logic
+            if (data[chan][id] || duplicateIds.has(id)) {
+              entry.isDuplicate = true;
+              duplicateIds.add(id);
+            }
+
+            entry.sourceFile = filename;
+            data[chan][id] = entry;
+          }
+        }
+        rebuildAllChannel();
+        render();
+      }
+
+      function renderChannel(name, filter = null, inv = false) {
+        if (!name) name = lc;
+        if (!name || !data[name]) return;
+        logss.innerHTML = "";
+
+        // Check for special duplicate filter
+        let hideDuplicates = filter === "duplicate:hide";
+        let actualFilter = hideDuplicates ? null : filter;
+
+        let ldate = "";
+        let logs = Object.values(data[name]);
+        let c = 0,
+          lel;
+
+        for (let i = 0; i < logs.length; i++) {
+          let l = logs[i];
+
+          // Duplicate Filter Logic
+          if (hideDuplicates && l.isDuplicate) continue;
+
+          let txt = l.text;
+          try {
+            txt = decodeURIComponent(l.text);
+          } catch (e) {}
+
+          if (actualFilter) {
+            let match = txt.toLowerCase().includes(actualFilter);
+            if ((inv && match) || (!inv && !match)) continue;
+          }
+
+          let date = l.time.split("T")[0];
+          let log = document.createElement("div");
+          log.className = "log" + (l.isDuplicate ? " is-duplicate" : "");
+
+          if (ldate != date) {
+            log.innerHTML = `<p class="date">${date} <span class="f">${c}</span></p>`;
+            lel = log.querySelector("span");
+            i--;
+            c = 0;
+          } else {
+            let t = l.time.split("T")[1].replace("Z", "");
+            let originTag = l.sourceFile
+              ? `<span class="origin">[${l.sourceFile}]</span>`
+              : "";
+            let dupTag = l.isDuplicate
+              ? `<span class="dup-tag">DUP</span>`
+              : "";
+
+            log.innerHTML = `<p class="time"><span class="cov"><span class="a">${t.split(".")[0]}</span>.${t.split(".")[1]} <span class="b">${l.ip}</span> <span class="c">${l.status}</span><span class="d">${name == "channel\nrender\nall" ? " " + (l.channel || "") : ""}</span> <span class="e">${l.country.replace(/^\.$/, "")}</span></span>${originTag}${dupTag}</p>`;
+
+            c++;
+            if (lel) lel.innerHTML = c;
+
+            let p = document.createElement("p");
+            p.className = "data";
+            p.textContent = txt;
+            log.append(p);
+          }
+          logss.append(log);
+          ldate = date;
+        }
+      }
+      function rebuildAllChannel() {
+        delete data["channel\nrender\nall"];
+        let all = {};
+        for (let chan in data) {
+          all = { ...all, ...data[chan] };
+        }
+        let srt = Object.values(all).sort(
+          (a, b) => new Date(a.time) - new Date(b.time),
+        );
+        let awl = {};
+        srt.forEach((item, idx) => {
+          awl[idx + "_" + Math.random()] = item;
+        });
+        data = { "channel\nrender\nall": awl, ...data };
+      }
+
+      function render(filter = null, inv = false) {
+        channels.innerHTML = "";
+        let channel_list = Object.keys(data);
+        channel_list.forEach((name) => {
+          if (filter) {
+            let match = name.toLowerCase().includes(filter);
+            if ((inv && match) || (!inv && !match)) return;
+          }
+          let chan = document.createElement("button");
+          chan.className = "channel";
+          chan.onclick = function () {
+            renderChannel(name);
+            lc = name;
+          };
+          chan.innerHTML = `${name} <span class='num'>${Object.keys(data[name]).length}</span>`;
+          channels.append(chan);
+        });
+      }
+
+      function renderChannelOld(name, filter = null, inv = false) {
+        if (!name) name = lc;
+        if (!name || !data[name]) return;
+        logss.innerHTML = "";
+        let ldate = "";
+        let logs = Object.values(data[name]);
+        let c = 0,
+          lel;
+
+        for (let i = 0; i < logs.length; i++) {
+          let l = logs[i];
+          let txt = l.text;
+          try {
+            txt = decodeURIComponent(l.text);
+          } catch (e) {}
+
+          if (filter) {
+            let match = txt.toLowerCase().includes(filter);
+            if ((inv && match) || (!inv && !match)) continue;
+          }
+
+          let date = l.time.split("T")[0];
+          let log = document.createElement("div");
+          log.className = "log";
+
+          if (ldate != date) {
+            log.innerHTML = `<p class="date">${date} <span class="f">${c}</span></p>`;
+            lel = log.querySelector("span");
+            i--;
+            c = 0;
+          } else {
+            let t = l.time.split("T")[1].replace("Z", "");
+            let originTag = l.sourceFile
+              ? `<span class="origin">[${l.sourceFile}]</span>`
+              : "";
+
+            log.innerHTML = `<p class="time"><span class="cov"><span class="a">${t.split(".")[0]}</span>.${t.split(".")[1]} <span class="b">${l.ip}</span> <span class="c">${l.status}</span><span class="d">${name == "channel\nrender\nall" ? " " + (l.channel || "") : ""}</span> <span class="e">${l.country.replace(/^\.$/, "")}</span></span>${originTag}</p>`;
+            c++;
+            if (lel) lel.innerHTML = c;
+
+            let p = document.createElement("p");
+            p.className = "data";
+            p.textContent = txt;
+            log.append(p);
+          }
+          logss.append(log);
+          ldate = date;
+        }
+      }
+
+      document
+        .getElementById("file-input")
+        .addEventListener("change", function (e) {
+          Array.from(e.target.files).forEach((file) => {
+            let reader = new FileReader();
+            reader.onload = (event) => {
+              try {
+                let json = JSON.parse(event.target.result);
+                processData(json, file.name);
+              } catch (err) {
+                console.error("Invalid JSON in " + file.name);
+              }
+            };
+            reader.readAsText(file);
+          });
+        });
+
+      fetch("./madlog.json")
+        .then((e) => e.json())
+        .then((e) => processData(e, "madlog.json"))
+        .catch((err) =>
+          console.log("Main file not found, waiting for upload."),
+        );
+
+      document
+        .getElementById("channel-search-input")
+        .addEventListener("input", (e) => {
+          let v = e.target.value;
+          let inv = v[0] == "!";
+          render(
+            inv ? v.substring(1).trim().toLowerCase() : v.trim().toLowerCase(),
+            inv,
+          );
+        });
+
+      document
+        .getElementById("log-search-input")
+        .addEventListener("input", (e) => {
+          let v = e.target.value;
+          let inv = v[0] == "!";
+          renderChannel(
+            null,
+            inv ? v.substring(1).trim().toLowerCase() : v.trim().toLowerCase(),
+            inv,
+          );
+        });
+    </script>
+  </body>
+</html>
