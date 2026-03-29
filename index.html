@@ -1,438 +1,405 @@
+<!DOCTYPE html>
 <html>
-  <head>
+<head>
     <style>
-      * {
-        scrollbar-width: thin;
-        scrollbar-color: #fff5 transparent;
-        font-family: "Geist Mono", monospace;
-      }
-      html,
-      body {
-        color: white;
-        background-color: black;
-        padding: 0px;
-        margin: 0px;
-      }
-      #container {
-        margin: 0px;
-        height: 100%;
-        width: 100%;
-        overflow-y: auto;
-        display: flex;
-      }
-      #left {
-        margin: 0px;
-        width: 20%;
-        display: flex;
-        flex-direction: column;
-      }
-      #channels {
-        margin: 0px;
-        padding: 0px;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        display: flex;
-        flex-direction: column;
-        overflow-x: hidden;
-      }
-      #channel-search {
-        margin: 0px;
-        width: 100%;
-        height: 5%;
-        background-color: red;
-        display: flex;
-      }
-      #channel-search-input {
-        margin: 0 auto;
-        padding: 3px;
-        width: 80%;
-        height: 100%;
-        outline: none;
-        display: block;
-        background-color: black;
-        color: white;
-        border: none;
-      }
-      #upload-btn {
-        width: 20%;
-        background: black;
-        color: white;
-        border: white 2px solid;
-        cursor: pointer;
-        font-size: 10px;
-        text-align: center;
-      }
-      #log-search {
-        margin: 0px;
-        padding: 0;
-        width: 100%;
-        height: 5%;
-        background-color: red;
-        display: block;
-      }
-      #log-search-input {
-        padding: 0px;
-        width: 100%;
-        height: 100%;
-        outline: none;
-        display: block;
-        background-color: black;
-        color: white;
-      }
-      #logss {
-        overflow-y: auto;
-        display: flex;
-        height: 95%;
-        flex-direction: column;
-      }
-      #right {
-        margin: 0px;
-        width: 80%;
-        display: flex;
-        flex-direction: column;
-      }
-      .channel {
-        background-color: black;
-        color: white;
-      }
-      .log {
-        padding: 2px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .date {
-        padding: 0;
-        margin: 0;
-        color: rgb(0, 255, 221);
-        font-weight: 900;
-        word-wrap: normal;
-        border-top: rgb(0, 255, 221) 1px solid;
-      }
-      .data {
-        padding: 0;
-        margin: 0;
-        word-wrap: break-word;
-      }
-      .num {
-        color: gray;
-      }
-      button {
-        text-align: left;
-        font-family: "Geist Mono";
-      }
-      button:hover {
-        background-color: #0ff9;
-      }
-      .time {
-        padding: 0;
-        margin: 0;
-        font-size: small;
-        font-weight: lighter;
-        color: rgba(255, 255, 255, 0.6);
-        word-wrap: normal;
-      }
-      .cov {
-        background-color: rgba(255, 255, 255, 0.05);
-        padding-left: 5px;
-        padding-right: 5px;
-        border: rgba(255, 255, 255, 0.011) 1px solid;
-        border-radius: 50px;
-      }
-      /* Source Filename Style */
-      .origin {
-        color: #ffa500;
-        font-size: 9px;
-        margin-left: 5px;
-        opacity: 0.8;
-      }
-      .a {
-        color: rgba(255, 192, 192, 0.8);
-        font-weight: 700;
-      }
-      .b {
-        color: rgb(127, 255, 240);
-        font-weight: 700;
-      }
-      .c {
-        color: rgba(0, 255, 64, 0.8);
-        font-weight: 400;
-      }
-      .d {
-        color: rgb(255, 0, 200);
-        font-weight: 800;
-      }
-      .e {
-        color: rgb(221, 255, 0);
-        font-weight: 400;
-      }
-      .f {
-        color: rgb(0, 255, 98);
-        font-weight: 800;
-      }
-      .is-duplicate {
-        border-left: 2px solid #ff0000;
-        background-color: rgba(255, 0, 0, 0.05);
-      }
-      .dup-tag {
-        color: #ff4444;
-        font-size: 8px;
-        font-weight: bold;
-        margin-left: 5px;
-      }
+        * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: #0f0 #000; font-family: "Geist Mono", monospace; }
+        html, body { height: 100%; margin: 0; padding: 0; background: #000; color: #fff; font-size: 11px; overflow: hidden; }
+        #container { display: flex; height: 100vh; width: 100vw; }
+
+        #left { width: 180px; display: flex; flex-direction: column; border-right: 1px solid #333; background: #000; }
+        #channel-search { height: 22px; display: flex; border-bottom: 1px solid #444; }
+        #channel-search-input, #log-search-input { flex: 1; background: #000; color: #0f0; border: none; padding: 0 4px; outline: none; font-weight: bold; }
+        #upload-btn { background: #ffffff; color: #000a41; border: none; cursor: pointer; padding: 5px 11px; font-size: 9px; font-weight: bold; right: 0; position: absolute; z-index: 2; }
+
+        #file-stats { padding: 2px 5px; border-bottom: 1px solid #333; background: #0a0a0a; font-size: 9px; color: #aaa; }
+        #file-toggles { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px; }
+        .file-btn { background: #111; color: #888; border: 1px solid #333; font-size: 8px; cursor: pointer; padding: 0 2px; }
+        .file-btn.active { color: #fff; border-color: #0ff; background: #044; }
+
+        /* channel list */
+        #channels-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+        #channels { flex: 1; overflow-y: auto; }
+        .channel {
+            width: 100%; background: none; color: #888; border: none;
+            padding: 2px 5px; text-align: left; cursor: pointer;
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 4px;
+            border-bottom: 1px solid #111;
+            font-size: 9px;
+        }
+        .channel:hover { background: #1a1a1a; color: #fff; }
+        .channel.active { background: #fff; color: #000; font-weight: 900; }
+        .channel .txt { flex: 1; word-break: break-all; white-space: normal; line-height: 1.35; }
+        .num { color: #555; font-size: 8px; flex-shrink: 0; padding-top: 1px; }
+        .channel.active .num { color: #000; }
+
+        /* shimmer */
+        #chan-shimmer { position: absolute; inset: 0; background: #000; padding: 6px; display: none; z-index: 5; }
+        #chan-shimmer.on { display: block; }
+        .sh { height: 11px; background: linear-gradient(90deg,#111 25%,#1c1c1c 50%,#111 75%); background-size: 200% 100%; animation: sh 1.1s infinite; margin-bottom: 5px; border-radius: 1px; }
+        @keyframes sh { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+        /* right */
+        #right { flex: 1; display: flex; flex-direction: column; background: #000; position: relative; min-width: 0; }
+        #log-search { height: 22px; border-bottom: 1px solid #444; display: flex; align-items: center; flex-shrink: 0; }
+        #log-search-input { flex: 1; }
+
+        /* progress bar */
+        #progress-wrap { height: 3px; background: #0a0a0a; flex-shrink: 0; overflow: hidden; }
+        #progress-bar { height: 100%; width: 0%; background: #0f0; transition: width 0.12s linear; }
+        #progress-bar.ind { width: 28% !important; animation: ind 0.9s ease-in-out infinite; }
+        @keyframes ind { 0%{transform:translateX(-150%)} 100%{transform:translateX(500%)} }
+
+        /* stats */
+        #stats-bar { height: 18px; background: #050505; border-bottom: 1px solid #222; display: flex; align-items: center; padding: 0 6px; gap: 10px; font-size: 9px; color: #555; flex-shrink: 0; }
+        #stats-bar span { color: #888; }
+        .sv { color: #0f0; font-weight: bold; }
+        .st { color: #ff0; }
+        .sd { color: #f0f; }
+        #loading-label { font-size: 9px; color: #0f0; font-weight: bold; margin-left: auto; padding-right: 4px; letter-spacing: 1px; display: none; }
+        #loading-label.on { display: block; animation: blink .7s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
+
+        /* logs */
+        #logss { flex: 1; overflow-y: auto; padding: 0; }
+        .log { margin: 0; padding: 1px 4px; border-bottom: 1px solid #111; border-left: 2px solid transparent; cursor: pointer; position: relative; }
+        .log:hover { background: #0a0a0a; }
+        .log.copied::after { content: 'COPIED'; position: absolute; right: 6px; top: 2px; font-size: 8px; color: #0f0; font-weight: bold; animation: fo .8s forwards; }
+        @keyframes fo { 0%,70%{opacity:1} 100%{opacity:0} }
+
+        .date-header {
+            color: #0ff; font-weight: 900; background: #033; padding: 2px 6px;
+            position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between;
+            border-bottom: 1px solid #0ff;
+        }
+        .time-row { display: flex; gap: 6px; font-size: 10px; line-height: 1; margin-bottom: 1px; flex-wrap: wrap; }
+        .a { color: #ff5f5f; font-weight: bold; } .b { color: #0ff; font-weight: bold; }
+        .c { color: #0f0; } .d { color: #f0f; } .e { color: #ff0; }
+        .origin { color: #ffa500; font-size: 8px; opacity: .8; }
+        .data { margin: 0 0 2px 0; white-space: pre-wrap; word-break: break-all; color: #fff; padding-left: 8px; border-left: 1px solid #333; line-height: 1.1; }
+        .is-duplicate { border-left-color: #f00; background: #100; }
+        .hl { background: #ff0; color: #000; border-radius: 1px; }
+        .log.pinned { border-left-color: #ff0 !important; background: #110 !important; }
+        .pin-dot { color: #ff0; font-size: 9px; margin-right: 3px; }
+
+        /* jump-to-top — anchored to #right, never inside #logss */
+        #jump-top {
+            display: none;
+            position: absolute; bottom: 14px; right: 14px; z-index: 200;
+            background: #0f0; color: #000; border: 2px solid #0f0;
+            cursor: pointer; font-family: "Geist Mono", monospace;
+            font-size: 9px; font-weight: 900; letter-spacing: 1px;
+            padding: 5px 10px;
+            box-shadow: 0 0 12px #0f09, 0 0 4px #0f0;
+        }
+        #jump-top.on { display: block; }
+        #jump-top:hover { background: #000; color: #0f0; }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div id="container">
-      <div id="left">
-        <div id="channel-search">
-          <input type="text" placeholder="Search" id="channel-search-input" />
-          <button
-            id="upload-btn"
-            onclick="document.getElementById('file-input').click()"
-          >
-            UP
-          </button>
-          <input
-            type="file"
-            id="file-input"
-            multiple
-            accept=".json"
-            style="display: none"
-          />
+        <div id="left">
+            <div id="channel-search">
+                <input type="text" placeholder="FILTER CHANS" id="channel-search-input" />
+                <button id="upload-btn" onclick="document.getElementById('file-input').click()">UP</button>
+                <input type="file" id="file-input" multiple accept=".json" style="display:none" />
+            </div>
+            <div id="file-stats">
+                <div id="log-range"><span id="oldest-log" class="b">-</span> &gt; <span id="latest-log" class="d">-</span></div>
+                <div id="file-toggles"></div>
+            </div>
+            <div id="channels-wrap">
+                <div id="chan-shimmer">
+                    <div class="sh" style="width:78%"></div><div class="sh" style="width:54%"></div>
+                    <div class="sh" style="width:90%"></div><div class="sh" style="width:46%"></div>
+                    <div class="sh" style="width:68%"></div><div class="sh" style="width:61%"></div>
+                    <div class="sh" style="width:83%"></div><div class="sh" style="width:57%"></div>
+                    <div class="sh" style="width:72%"></div><div class="sh" style="width:43%"></div>
+                </div>
+                <div id="channels"></div>
+            </div>
         </div>
-        <div id="channels"></div>
-      </div>
-      <div id="right">
-        <div id="log-search">
-          <input type="text" placeholder="Search" id="log-search-input" />
+
+        <div id="right">
+            <div id="log-search">
+                <input type="text" placeholder="SEARCH LOGS (! NOT)" id="log-search-input" />
+            </div>
+            <div id="progress-wrap"><div id="progress-bar"></div></div>
+            <div id="stats-bar">
+                <span>TOTAL: <span class="sv" id="stat-total">0</span></span>
+                <span>SHOWN: <span class="st" id="stat-shown">0</span></span>
+                <span>DUPES: <span class="sd" id="stat-dupes">0</span></span>
+                <span>DAYS: <span class="sv" id="stat-days">0</span></span>
+                <span>PINS: <span style="color:#ff0" id="stat-pins">0</span></span>
+                <span id="loading-label">LOADING…</span>
+            </div>
+            <div id="logss"></div>
+            <!-- jump-top is a sibling of #logss so innerHTML clears never affect it -->
+            <button id="jump-top" title="Back to top">▲ TOP</button>
         </div>
-        <div id="logss"></div>
-      </div>
     </div>
+
     <script>
-      let data = {},
-        lc;
+        let rawData = {};
+        let activeChannel = "ALL_CHANNELS";
+        let activeFiles = new Set();
+        let allFiles = new Set();
+        let currentAbortController = null;
+        let pinnedLogs = new Set();
 
-      let duplicateIds = new Set();
+        const DOM = {
+            channels:     document.getElementById('channels'),
+            logss:        document.getElementById('logss'),
+            toggles:      document.getElementById('file-toggles'),
+            oldest:       document.getElementById('oldest-log'),
+            latest:       document.getElementById('latest-log'),
+            cSearch:      document.getElementById('channel-search-input'),
+            lSearch:      document.getElementById('log-search-input'),
+            chanShimmer:  document.getElementById('chan-shimmer'),
+            progressBar:  document.getElementById('progress-bar'),
+            loadingLabel: document.getElementById('loading-label'),
+            statTotal:    document.getElementById('stat-total'),
+            statShown:    document.getElementById('stat-shown'),
+            statDupes:    document.getElementById('stat-dupes'),
+            statDays:     document.getElementById('stat-days'),
+            statPins:     document.getElementById('stat-pins'),
+            jumpTop:      document.getElementById('jump-top'),
+        };
 
-      function processData(newData, filename = "local") {
-        let incomingLogs = newData.logs || {};
+        // ── Progress ─────────────────────────────────────────────────
+        function progressStart() {
+            DOM.progressBar.classList.add('ind');
+            DOM.progressBar.style.width = '';
+            DOM.loadingLabel.classList.add('on');
+        }
+        function progressSet(pct) {
+            DOM.progressBar.classList.remove('ind');
+            DOM.progressBar.style.width = Math.min(100, pct) + '%';
+        }
+        function progressDone() {
+            progressSet(100);
+            DOM.loadingLabel.classList.remove('on');
+            setTimeout(() => { DOM.progressBar.style.width = '0%'; }, 280);
+        }
 
-        for (let chan in incomingLogs) {
-          if (!data[chan]) data[chan] = {};
+        // ── Channel shimmer ───────────────────────────────────────────
+        function chanStart() { DOM.chanShimmer.classList.add('on'); DOM.channels.style.visibility = 'hidden'; }
+        function chanDone()  { DOM.chanShimmer.classList.remove('on'); DOM.channels.style.visibility = ''; }
 
-          for (let id in incomingLogs[chan]) {
-            let entry = incomingLogs[chan][id];
+        // ── Async batch ───────────────────────────────────────────────
+        async function batchProcess(items, size, signal, fn) {
+            let i = 0;
+            return new Promise((res, rej) => {
+                function next() {
+                    if (signal?.aborted) return rej(new Error('aborted'));
+                    const end = Math.min(i + size, items.length);
+                    for (; i < end; i++) fn(items[i], i);
+                    progressSet((i / Math.max(items.length, 1)) * 100);
+                    if (i < items.length) setTimeout(() => requestAnimationFrame(next), 0);
+                    else res();
+                }
+                requestAnimationFrame(next);
+            });
+        }
 
-            // Flagging Logic
-            if (data[chan][id] || duplicateIds.has(id)) {
-              entry.isDuplicate = true;
-              duplicateIds.add(id);
+        // ── Data ingestion ────────────────────────────────────────────
+        function processData(newData, filename) {
+            allFiles.add(filename);
+            activeFiles.add(filename);
+            const logs = newData.logs || {};
+            for (const chan in logs) {
+                if (!rawData[chan]) rawData[chan] = {};
+                Object.assign(rawData[chan], logs[chan]);
+                for (let id in logs[chan]) {
+                    const entry = rawData[chan][id];
+                    if (!entry.sources) entry.sources = [];
+                    if (!entry.sources.includes(filename)) entry.sources.push(filename);
+                    if (entry.sources.length > 1) entry.isDuplicate = true;
+                }
+            }
+            refresh();
+        }
+
+        function refresh() {
+            renderToggles();
+            updateSummary();
+            // channels async — shimmer shows while JS yields
+            chanStart();
+            setTimeout(() => { renderChannelList(); chanDone(); }, 0);
+            // logs async
+            renderLogs(activeChannel);
+        }
+
+        function renderToggles() {
+            DOM.toggles.innerHTML = "";
+            allFiles.forEach(f => {
+                const b = document.createElement('button');
+                b.className = `file-btn ${activeFiles.has(f) ? 'active' : ''}`;
+                b.textContent = f;
+                b.onclick = () => { activeFiles.has(f) ? activeFiles.delete(f) : activeFiles.add(f); refresh(); };
+                DOM.toggles.appendChild(b);
+            });
+        }
+
+        function renderChannelList() {
+            const filter = DOM.cSearch.value.toLowerCase();
+            DOM.channels.innerHTML = "";
+            const keys = Object.keys(rawData).filter(k => k !== "ALL_CHANNELS").sort();
+            ["ALL_CHANNELS", ...keys].forEach(name => {
+                if (filter && !name.toLowerCase().includes(filter)) return;
+                const logs = name === "ALL_CHANNELS" ? [] : Object.values(rawData[name]);
+                const count = name === "ALL_CHANNELS" ? "" : logs.filter(l => l.sources.some(s => activeFiles.has(s))).length;
+                if (name !== "ALL_CHANNELS" && count === 0) return;
+
+                const b = document.createElement('button');
+                b.className = `channel ${activeChannel === name ? 'active' : ''}`;
+                b.innerHTML = `<span class="txt"></span><span class="num">${count}</span>`;
+                b.querySelector('.txt').textContent = name === "ALL_CHANNELS" ? ">> VIEW ALL" : name;
+                b.onclick = () => { activeChannel = name; renderLogs(name); };
+                DOM.channels.appendChild(b);
+            });
+        }
+
+        async function renderLogs(name) {
+            if (currentAbortController) currentAbortController.abort();
+            currentAbortController = new AbortController();
+            const signal = currentAbortController.signal;
+
+            progressStart();
+            DOM.logss.innerHTML = "";
+
+            let logs = [];
+            if (name === "ALL_CHANNELS") {
+                Object.values(rawData).forEach(chanLogs => logs.push(...Object.values(chanLogs)));
+            } else {
+                logs = Object.values(rawData[name] || {});
             }
 
-            entry.sourceFile = filename;
-            data[chan][id] = entry;
-          }
+            const query = DOM.lSearch.value.toLowerCase();
+            const isInv = query.startsWith('!');
+            const cleanQ = isInv ? query.slice(1) : query;
+
+            const filtered = logs.filter(l => {
+                if (!l.sources.some(s => activeFiles.has(s))) return false;
+                if (!cleanQ) return true;
+                const txt = (l.text || "").toLowerCase();
+                return isInv ? !txt.includes(cleanQ) : txt.includes(cleanQ);
+            }).sort((a, b) => new Date(a.time) - new Date(b.time));
+
+            document.querySelectorAll('.channel').forEach(c =>
+                c.classList.toggle('active', c.querySelector('.txt').textContent === (name === "ALL_CHANNELS" ? ">> VIEW ALL" : name))
+            );
+
+            // day counts
+            const dayCounts = {};
+            filtered.forEach(l => {
+                const d = l.time.split('T')[0];
+                dayCounts[d] = (dayCounts[d] || 0) + 1;
+            });
+
+            // stats
+            let totalVisible = 0;
+            Object.values(rawData).forEach(c => Object.values(c).forEach(l => {
+                if (l.sources.some(s => activeFiles.has(s))) totalVisible++;
+            }));
+            DOM.statTotal.textContent = totalVisible;
+            DOM.statShown.textContent = filtered.length;
+            DOM.statDupes.textContent = filtered.filter(l => l.isDuplicate).length;
+            DOM.statDays.textContent = Object.keys(dayCounts).length;
+            DOM.statPins.textContent = pinnedLogs.size;
+
+            let lastDate = "";
+            const frag = document.createDocumentFragment();
+
+            try {
+                await batchProcess(filtered, 100, signal, (l) => {
+                    const d = l.time.split('T')[0];
+                    if (d !== lastDate) {
+                        const h = document.createElement('div');
+                        h.className = 'date-header';
+                        h.innerHTML = `<span>${d}</span><span style="font-size:9px">COUNT: ${dayCounts[d]}</span>`;
+                        frag.appendChild(h);
+                        lastDate = d;
+                    }
+
+                    const div = document.createElement('div');
+                    const logKey = l.time + (l.ip || '') + (l.text || '');
+                    div.className = `log ${l.isDuplicate ? 'is-duplicate' : ''} ${pinnedLogs.has(logKey) ? 'pinned' : ''}`;
+                    div.dataset.logKey = logKey;
+                    div.dataset.logText = l.text || '';
+
+                    const t = l.time.split('T')[1].replace('Z', '').split('.');
+                    const pinMark = pinnedLogs.has(logKey) ? '<span class="pin-dot">★</span>' : '';
+                    div.innerHTML = `<div class="time-row">${pinMark}<span class="a">${t[0]}</span><span class="b">${l.ip}</span><span class="c">${l.status}</span><span class="d">${name === "ALL_CHANNELS" ? (l.channel || '') : ''}</span><span class="e">${l.country === '.' ? '' : l.country}</span><span class="origin">[${l.sources.filter(s => activeFiles.has(s)).join(',')}]</span></div>`;
+
+                    const p = document.createElement('p');
+                    p.className = 'data';
+                    let txt;
+                    try { txt = decodeURIComponent(l.text); } catch(e) { txt = l.text; }
+
+                    if (cleanQ && !isInv && txt.toLowerCase().includes(cleanQ)) {
+                        const re = new RegExp('(' + cleanQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+                        p.innerHTML = txt.replace(re, '<span class="hl">$1</span>');
+                    } else {
+                        p.textContent = txt;
+                    }
+                    div.appendChild(p);
+                    frag.appendChild(div);
+                });
+
+                DOM.logss.appendChild(frag);
+                progressDone();
+
+                DOM.logss.querySelectorAll('.log').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        if (e.detail === 2) return;
+                        navigator.clipboard.writeText(el.dataset.logText || '').catch(() => {});
+                        el.classList.add('copied');
+                        setTimeout(() => el.classList.remove('copied'), 900);
+                    });
+                    el.addEventListener('dblclick', () => {
+                        const k = el.dataset.logKey;
+                        if (pinnedLogs.has(k)) { pinnedLogs.delete(k); el.classList.remove('pinned'); }
+                        else { pinnedLogs.add(k); el.classList.add('pinned'); }
+                        DOM.statPins.textContent = pinnedLogs.size;
+                    });
+                });
+
+            } catch(e) {
+                if (e.message !== 'aborted') console.error(e);
+                progressDone();
+            }
         }
-        rebuildAllChannel();
-        render();
-      }
 
-      function renderChannel(name, filter = null, inv = false) {
-        if (!name) name = lc;
-        if (!name || !data[name]) return;
-        logss.innerHTML = "";
-
-        // Check for special duplicate filter
-        let hideDuplicates = filter === "duplicate:hide";
-        let actualFilter = hideDuplicates ? null : filter;
-
-        let ldate = "";
-        let logs = Object.values(data[name]);
-        let c = 0,
-          lel;
-
-        for (let i = 0; i < logs.length; i++) {
-          let l = logs[i];
-
-          // Duplicate Filter Logic
-          if (hideDuplicates && l.isDuplicate) continue;
-
-          let txt = l.text;
-          try {
-            txt = decodeURIComponent(l.text);
-          } catch (e) {}
-
-          if (actualFilter) {
-            let match = txt.toLowerCase().includes(actualFilter);
-            if ((inv && match) || (!inv && !match)) continue;
-          }
-
-          let date = l.time.split("T")[0];
-          let log = document.createElement("div");
-          log.className = "log" + (l.isDuplicate ? " is-duplicate" : "");
-
-          if (ldate != date) {
-            log.innerHTML = `<p class="date">${date} <span class="f">${c}</span></p>`;
-            lel = log.querySelector("span");
-            i--;
-            c = 0;
-          } else {
-            let t = l.time.split("T")[1].replace("Z", "");
-            let originTag = l.sourceFile
-              ? `<span class="origin">[${l.sourceFile}]</span>`
-              : "";
-            let dupTag = l.isDuplicate
-              ? `<span class="dup-tag">DUP</span>`
-              : "";
-
-            log.innerHTML = `<p class="time"><span class="cov"><span class="a">${t.split(".")[0]}</span>.${t.split(".")[1]} <span class="b">${l.ip}</span> <span class="c">${l.status}</span><span class="d">${name == "channel\nrender\nall" ? " " + (l.channel || "") : ""}</span> <span class="e">${l.country.replace(/^\.$/, "")}</span></span>${originTag}${dupTag}</p>`;
-
-            c++;
-            if (lel) lel.innerHTML = c;
-
-            let p = document.createElement("p");
-            p.className = "data";
-            p.textContent = txt;
-            log.append(p);
-          }
-          logss.append(log);
-          ldate = date;
+        function updateSummary() {
+            let all = [];
+            Object.values(rawData).forEach(c => all.push(...Object.values(c)));
+            const active = all.filter(l => l.sources.some(s => activeFiles.has(s))).sort((a, b) => new Date(a.time) - new Date(b.time));
+            if (!active.length) { DOM.oldest.textContent = DOM.latest.textContent = "-"; return; }
+            DOM.oldest.textContent = active[0].time.split('T')[0];
+            DOM.latest.textContent = active[active.length - 1].time.split('T')[0];
         }
-      }
-      function rebuildAllChannel() {
-        delete data["channel\nrender\nall"];
-        let all = {};
-        for (let chan in data) {
-          all = { ...all, ...data[chan] };
-        }
-        let srt = Object.values(all).sort(
-          (a, b) => new Date(a.time) - new Date(b.time),
-        );
-        let awl = {};
-        srt.forEach((item, idx) => {
-          awl[idx + "_" + Math.random()] = item;
+
+        document.getElementById('file-input').onchange = (e) => {
+            Array.from(e.target.files).forEach(f => {
+                const r = new FileReader();
+                r.onload = (ev) => processData(JSON.parse(ev.target.result), f.name);
+                r.readAsText(f);
+            });
+        };
+
+        DOM.cSearch.oninput = () => {
+            chanStart();
+            setTimeout(() => { renderChannelList(); chanDone(); }, 0);
+        };
+        DOM.lSearch.oninput = () => renderLogs(activeChannel);
+
+        // jump-top is a sibling of #logss — survives all innerHTML wipes
+        DOM.logss.addEventListener('scroll', function() {
+            DOM.jumpTop.classList.toggle('on', this.scrollTop > 300);
         });
-        data = { "channel\nrender\nall": awl, ...data };
-      }
+        DOM.jumpTop.onclick = () => DOM.logss.scrollTo({ top: 0, behavior: 'smooth' });
 
-      function render(filter = null, inv = false) {
-        channels.innerHTML = "";
-        let channel_list = Object.keys(data);
-        channel_list.forEach((name) => {
-          if (filter) {
-            let match = name.toLowerCase().includes(filter);
-            if ((inv && match) || (!inv && !match)) return;
-          }
-          let chan = document.createElement("button");
-          chan.className = "channel";
-          chan.onclick = function () {
-            renderChannel(name);
-            lc = name;
-          };
-          chan.innerHTML = `${name} <span class='num'>${Object.keys(data[name]).length}</span>`;
-          channels.append(chan);
-        });
-      }
-
-      function renderChannelOld(name, filter = null, inv = false) {
-        if (!name) name = lc;
-        if (!name || !data[name]) return;
-        logss.innerHTML = "";
-        let ldate = "";
-        let logs = Object.values(data[name]);
-        let c = 0,
-          lel;
-
-        for (let i = 0; i < logs.length; i++) {
-          let l = logs[i];
-          let txt = l.text;
-          try {
-            txt = decodeURIComponent(l.text);
-          } catch (e) {}
-
-          if (filter) {
-            let match = txt.toLowerCase().includes(filter);
-            if ((inv && match) || (!inv && !match)) continue;
-          }
-
-          let date = l.time.split("T")[0];
-          let log = document.createElement("div");
-          log.className = "log";
-
-          if (ldate != date) {
-            log.innerHTML = `<p class="date">${date} <span class="f">${c}</span></p>`;
-            lel = log.querySelector("span");
-            i--;
-            c = 0;
-          } else {
-            let t = l.time.split("T")[1].replace("Z", "");
-            let originTag = l.sourceFile
-              ? `<span class="origin">[${l.sourceFile}]</span>`
-              : "";
-
-            log.innerHTML = `<p class="time"><span class="cov"><span class="a">${t.split(".")[0]}</span>.${t.split(".")[1]} <span class="b">${l.ip}</span> <span class="c">${l.status}</span><span class="d">${name == "channel\nrender\nall" ? " " + (l.channel || "") : ""}</span> <span class="e">${l.country.replace(/^\.$/, "")}</span></span>${originTag}</p>`;
-            c++;
-            if (lel) lel.innerHTML = c;
-
-            let p = document.createElement("p");
-            p.className = "data";
-            p.textContent = txt;
-            log.append(p);
-          }
-          logss.append(log);
-          ldate = date;
-        }
-      }
-
-      document
-        .getElementById("file-input")
-        .addEventListener("change", function (e) {
-          Array.from(e.target.files).forEach((file) => {
-            let reader = new FileReader();
-            reader.onload = (event) => {
-              try {
-                let json = JSON.parse(event.target.result);
-                processData(json, file.name);
-              } catch (err) {
-                console.error("Invalid JSON in " + file.name);
-              }
-            };
-            reader.readAsText(file);
-          });
-        });
-
-      fetch("./madlog.json")
-        .then((e) => e.json())
-        .then((e) => processData(e, "madlog.json"))
-        .catch((err) =>
-          console.log("Main file not found, waiting for upload."),
-        );
-
-      document
-        .getElementById("channel-search-input")
-        .addEventListener("input", (e) => {
-          let v = e.target.value;
-          let inv = v[0] == "!";
-          render(
-            inv ? v.substring(1).trim().toLowerCase() : v.trim().toLowerCase(),
-            inv,
-          );
-        });
-
-      document
-        .getElementById("log-search-input")
-        .addEventListener("input", (e) => {
-          let v = e.target.value;
-          let inv = v[0] == "!";
-          renderChannel(
-            null,
-            inv ? v.substring(1).trim().toLowerCase() : v.trim().toLowerCase(),
-            inv,
-          );
-        });
+        fetch("./madlog.json").then(r => r.json()).then(j => processData(j, "madlog.json")).catch(() => {});
     </script>
-  </body>
+</body>
 </html>
